@@ -29,7 +29,7 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(corsBuilder =>
     {
-        corsBuilder.WithOrigins("http://localhost:5174", "http://localhost:3000", "https://basilomsha.vercel.app")
+        corsBuilder.WithOrigins("http://localhost:5174", "http://localhost:3000", "https://basilomsha.vercel.app", "https://basilomsha.dev")
                .AllowAnyMethod()
                .AllowAnyHeader()
                .AllowCredentials();
