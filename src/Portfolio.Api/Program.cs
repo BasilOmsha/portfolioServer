@@ -57,15 +57,13 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // Add CORS
-var origins = builder.Environment.IsDevelopment() 
-    ? builder.Configuration.GetSection("Cors:Origins").Get<string[]>() 
-    : builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? Array.Empty<string>();
+var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigins", policy =>
     {
-        policy.WithOrigins(origins!)
+        policy.WithOrigins(origins)
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials();
