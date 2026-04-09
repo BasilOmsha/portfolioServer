@@ -27,6 +27,9 @@ dotnet user-secrets set "EmailJsSettings:PrivateKey" "your_emailjs_private_key"
 # Set reCAPTCHA configuration
 dotnet user-secrets set "RecaptchaSettings:SiteKey" "your_recaptcha_site_key"
 dotnet user-secrets set "RecaptchaSettings:SecretKey" "your_recaptcha_secret_key"
+
+dotnet user-secrets set "Cors:Origins:0" "http://..."
+dotnet user-secrets set "Cors:Origins:1" "http://..."
 ```
 
 ### 2. Build and Run

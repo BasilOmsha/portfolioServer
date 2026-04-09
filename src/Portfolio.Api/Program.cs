@@ -1,13 +1,29 @@
+using System.Reflection;
 using Portfolio.Infrastructure.Extensions;
 using Portfolio.Api.Middleware;
 using Portfolio.Application.Interfaces;
 using Portfolio.Application.Services;
+using Microsoft.OpenApi;
+using Azure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
+
+if (builder.Environment.IsProduction())
+{
+    // Add Azure Key Vault
+    var keyVaultUri = builder.Configuration["KeyVault:VaultUri"];
+    if (!string.IsNullOrWhiteSpace(keyVaultUri))
+    {
+        builder.Configuration.AddAzureKeyVault(
+            new Uri(keyVaultUri),
+            new DefaultAzureCredential()
+        );
+    }
+}
 
 // Add logging
 builder.Services.AddLogging(logging =>
@@ -24,18 +40,32 @@ builder.Services.AddScoped<IContactService, ContactService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IRecaptchaService, RecaptchaService>();
 
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Version = "v1",
+        Title = "Portfolio API",
+        Description = "API for the Portfolio application",
+    });
+
+    //Show XML comments on swagger
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    options.IncludeXmlComments(xmlPath);
+});
+
 // Add CORS
+var origins = builder.Environment.IsDevelopment() 
+    ? builder.Configuration.GetSection("Cors:Origins").Get<string[]>() 
+    : builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? Array.Empty<string>();
+
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(corsBuilder =>
+    options.AddPolicy("AllowSpecificOrigins", policy =>
     {
-        corsBuilder.WithOrigins(
-                "http://localhost:5174", 
-                "http://localhost:3000", 
-                "https://basilomsha.vercel.app", 
-                "https://basilomsha.dev",
-                "https://www.basilomsha.dev"
-            )
+        policy.WithOrigins(origins!)
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials();
@@ -44,19 +74,21 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
-}
-else
-{
-    app.UseExceptionHandler("/error");
-    app.UseHsts();
+    app.MapSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Portfolio v1");
+    });
 }
 
+if (!app.Environment.IsDevelopment())
+    app.UseHsts();
+
 app.UseHttpsRedirection();
-app.UseCors();
+app.UseCors("AllowSpecificOrigins");
 app.UseRouting();
 app.UseAuthorization();
 app.UseMiddleware<ExceptionMiddleware>();
