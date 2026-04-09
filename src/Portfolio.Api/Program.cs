@@ -86,8 +86,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 
 app.UseHttpsRedirection();
-app.UseCors("AllowSpecificOrigins");
 app.UseRouting();
+app.UseCors("AllowSpecificOrigins");
 app.UseAuthorization();
 app.UseMiddleware<ExceptionMiddleware>();
 
